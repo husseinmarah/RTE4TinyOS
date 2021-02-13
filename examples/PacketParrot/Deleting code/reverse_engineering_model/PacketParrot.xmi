@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:tinyos_metamodel="http://emf.tinyos_metamodel">
+  <hasApplication Name="PacketParrot">
+    <hasComponent Name="Module Component">
+      <containsModule Name="PacketParrotP">
+        <has_module_signature Name="PacketParrotP">
+          <usesInterface Name="Boot"/>
+          <usesInterface Name="Leds"/>
+          <usesInterface Name="Packet"/>
+          <usesInterface Name="Send"/>
+          <usesInterface Name="Receive"/>
+          <usesInterface Name="SplitControl as AMControl"/>
+          <usesInterface Name="LogRead"/>
+          <usesInterface Name="LogWrite"/>
+          <usesInterface Name="Timer&lt;TMilli> as Timer0"/>
+        </has_module_signature>
+        <has_module_implementation>
+          <has_nesC_code Content="enum { INTER_PACKET_INTERVAL = 25&#xD;&#xA;&#x9;};"/>
+          <has_nesC_code Content="bool m_busy = TRUE;"/>
+          <has_nesC_code Content="logentry_t m_entry;"/>
+          <implementsEvent Name="Boot.booted()" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    call AMControl.start();&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="AMControl.startDone(error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    if (err == SUCCESS) {&#xD;&#xA;&#x9;      if (call LogRead.read(&amp;m_entry, sizeof(logentry_t)) != SUCCESS) {&#xD;&#xA;&#x9;&#x9;// Handle error.&#xD;&#xA;&#x9;      }&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    else {&#xD;&#xA;&#x9;      call AMControl.start();&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="AMControl.stopDone(error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="LogRead.readDone(void* buf, storage_len_t len, error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    if ( (len == sizeof(logentry_t)) &amp;&amp; (buf == &amp;m_entry) ) {&#xD;&#xA;&#x9;      call Send.send(&amp;m_entry.msg, m_entry.len);&#xD;&#xA;&#x9;      call Leds.led1On();&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    else {&#xD;&#xA;&#x9;      if (call LogWrite.erase() != SUCCESS) {&#xD;&#xA;&#x9;&#x9;// Handle error.&#xD;&#xA;&#x9;      }&#xD;&#xA;&#x9;      call Leds.led0On();&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="Send.sendDone(message_t* msg, error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    call Leds.led1Off();&#xD;&#xA;&#x9;    if ( (err == SUCCESS) &amp;&amp; (msg == &amp;m_entry.msg) ) {&#xD;&#xA;&#x9;      call Packet.clear(&amp;m_entry.msg);&#xD;&#xA;&#x9;      if (call LogRead.read(&amp;m_entry, sizeof(logentry_t)) != SUCCESS) {&#xD;&#xA;&#x9;&#x9;// Handle error.&#xD;&#xA;&#x9;      }&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    else {&#xD;&#xA;&#x9;      call Timer0.startOneShot(INTER_PACKET_INTERVAL);&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="Timer0.fired()" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    call Send.send(&amp;m_entry.msg, m_entry.len);&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="LogWrite.eraseDone(error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    if (err == SUCCESS) {&#xD;&#xA;&#x9;      m_busy = FALSE;&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    else {&#xD;&#xA;&#x9;      // Handle error.&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    call Leds.led0Off();&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="message_t* Receive.receive(message_t* msg, void* payload, uint8_t len)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    call Leds.led2On();&#xD;&#xA;&#x9;    if (!m_busy) {&#xD;&#xA;&#x9;      m_busy = TRUE;&#xD;&#xA;&#x9;      m_entry.len = len;&#xD;&#xA;&#x9;      m_entry.msg = *msg;&#xD;&#xA;&#x9;      if (call LogWrite.append(&amp;m_entry, sizeof(logentry_t)) != SUCCESS) {&#xD;&#xA;&#x9;&#x9;m_busy = FALSE;&#xD;&#xA;&#x9;      }&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    return msg;&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="LogWrite.appendDone(void* buf, storage_len_t len, &#xD;&#xA;&#x9;                                 bool recordsLost, error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    m_busy = FALSE;&#xD;&#xA;&#x9;    call Leds.led2Off();&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="LogRead.seekDone(error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="LogWrite.syncDone(error_t err)" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+        </has_module_implementation>
+      </containsModule>
+    </hasComponent>
+    <hasComponent Name="Configuration Component">
+      <containsConfiguration Name="PacketParrotC">
+        <has_configuration_signature Name="PacketParrotC"/>
+        <has_configuration_implementation>
+          <hasWiring Description="">
+            <has_nesC_wiring_code Content="App.Boot -> MainC"/>
+            <has_nesC_wiring_code Content="App.Leds -> LedsC"/>
+            <has_nesC_wiring_code Content="App.Packet -> ActiveMessageC"/>
+            <has_nesC_wiring_code Content="App.AMControl -> ActiveMessageC"/>
+            <has_nesC_wiring_code Content="App.Send -> CC2420CsmaC"/>
+            <has_nesC_wiring_code Content="App.Receive -> CC2420CsmaC"/>
+            <has_nesC_wiring_code Content="App.LogRead -> LogStorageC"/>
+            <has_nesC_wiring_code Content="App.LogWrite -> LogStorageC"/>
+            <has_nesC_wiring_code Content="App.Timer0 -> Timer0"/>
+          </hasWiring>
+          <definesComponents Name="MainC"/>
+          <definesComponents Name="LedsC"/>
+          <definesComponents Name="PacketParrotP as App"/>
+          <definesComponents Name="ActiveMessageC"/>
+          <definesComponents Name="CC2420CsmaC"/>
+          <definesComponents Name="new LogStorageC(VOLUME_LOGTEST, TRUE)"/>
+          <definesComponents Name="new TimerMilliC() as Timer0"/>
+        </has_configuration_implementation>
+      </containsConfiguration>
+      <hasIncludeDecleration Name="&lt;Timer.h>"/>
+      <hasIncludeDecleration Name="StorageVolumes.h"/>
+    </hasComponent>
+  </hasApplication>
+</tinyos_metamodel:Mote>

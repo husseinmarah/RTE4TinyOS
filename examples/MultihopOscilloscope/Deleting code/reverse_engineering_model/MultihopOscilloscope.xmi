@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0"
+    xmlns:tinyos_metamodel="http://emf.tinyos_metamodel"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://emf.tinyos_metamodel tinyos_metamodel.ecore">
+    <hasApplication Name="MultihopOscilloscope">
+        <hasComponent Name="Module Component">
+            <containsModule Name="MultihopOscilloscopeC">
+                <has_module_signature Name="MultihopOscilloscopeC">
+                    <usesInterface Name="Boot"/>
+                    <usesInterface Name="SplitControl as RadioControl"/>
+                    <usesInterface Name="SplitControl as SerialControl"/>
+                    <usesInterface Name="StdControl as RoutingControl"/>
+                    <usesInterface Name="Receive as Snoop"/>
+                    <usesInterface Name="Receive"/>
+                    <usesInterface Name="AMSend as SerialSend"/>
+                    <usesInterface Name="CollectionPacket"/>
+                    <usesInterface Name="RootControl"/>
+                    <usesInterface Name="Queue&lt;message_t *> as UARTQueue"/>
+                    <usesInterface Name="Pool&lt;message_t> as UARTMessagePool"/>
+                    <usesInterface Name="Timer&lt;TMilli>"/>
+                    <usesInterface Name="Leds"/>
+                    <usesInterface Name="Timer&lt;TMilli> as TestTimer"/>
+                    <usesInterface Name="SplitControl as RadioControl"/>
+                </has_module_signature>
+                <has_module_implementation>
+                    <has_nesC_code Content="uint8_t testCounter;"/>
+                    <has_nesC_code Content="uint8_t uartlen;"/>
+                    <has_nesC_code Content="message_t sendbuf;"/>
+                    <has_nesC_code Content="message_t uartbuf;"/>
+                    <has_nesC_code Content="bool sendbusy=FALSE, uartbusy=FALSE;"/>
+                    <has_nesC_code Content="oscilloscope_t local;"/>
+                    <has_nesC_code Content="uint8_t reading;"/>
+                    <has_nesC_code Content="bool suppress_count_change;"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    local.interval = DEFAULT_INTERVAL;&#xd;&#xa;&#x9;    local.id = TOS_NODE_ID;&#xd;&#xa;&#x9;    local.version = 0;&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    // Beginning our initialization phases:&#xd;&#xa;&#x9;    if (call RadioControl.start() != SUCCESS)&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    if (call RoutingControl.start() != SUCCESS)&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="Boot.booted()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    if (error != SUCCESS)&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    if (sizeof(local) > call Send.maxPayloadLength())&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    if (call SerialControl.start() != SUCCESS)&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="RadioControl.startDone(error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    if (error != SUCCESS)&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    // This is how to set yourself as a root to the collection layer:&#xd;&#xa;&#x9;    if (local.id % 500 == 0)&#xd;&#xa;&#x9;      call RootControl.setRoot();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    startTimer();&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="SerialControl.startDone(error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;    &#xd;&#xa;&#x9; " Name="RadioControl.stopDone(error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;    &#xd;&#xa;&#x9; " Name="SerialControl.stopDone(error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    oscilloscope_t* in = (oscilloscope_t*)payload;&#xd;&#xa;&#x9;    oscilloscope_t* out;&#xd;&#xa;&#x9;&#x9;//call Leds.led0Toggle(); //this for debugging purpose, it will show the red led0On&#xd;&#xa;&#x9;    if (uartbusy == FALSE) {&#xd;&#xa;&#x9;      out = (oscilloscope_t*)call SerialSend.getPayload(&amp;uartbuf, sizeof(oscilloscope_t));&#xd;&#xa;&#x9;      if (len != sizeof(oscilloscope_t) || out == NULL) {&#xd;&#xa;&#x9;&#x9;&#x9;return msg;&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;      else {&#xd;&#xa;&#x9;&#x9;&#x9;memcpy(out, in, sizeof(oscilloscope_t));&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;      uartlen = sizeof(oscilloscope_t);&#xd;&#xa;&#x9;      post uartSendTask();&#xd;&#xa;&#x9;    } else {&#xd;&#xa;&#x9;      // The UART is busy; queue up messages and service them when the&#xd;&#xa;&#x9;      // UART becomes free.&#xd;&#xa;&#x9;      message_t *newmsg = call UARTMessagePool.get();&#xd;&#xa;&#x9;      if (newmsg == NULL) {&#xd;&#xa;&#x9;        // drop the message if we run out of queue space.&#xd;&#xa;&#x9;        report_problem();&#xd;&#xa;&#x9;        return msg;&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;      //Serial port busy, so enqueue.&#xd;&#xa;&#x9;      out = (oscilloscope_t*)call SerialSend.getPayload(newmsg, sizeof(oscilloscope_t));&#xd;&#xa;&#x9;      if (out == NULL) {&#xd;&#xa;&#x9;&#x9;&#x9;return msg;&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;      memcpy(out, in, sizeof(oscilloscope_t));&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;      if (call UARTQueue.enqueue(newmsg) != SUCCESS) {&#xd;&#xa;&#x9;        // drop the message and hang if we run out of&#xd;&#xa;&#x9;        // queue space without running out of queue space first (this&#xd;&#xa;&#x9;        // should not occur).&#xd;&#xa;&#x9;        call UARTMessagePool.put(newmsg);&#xd;&#xa;&#x9;        fatal_problem();&#xd;&#xa;&#x9;        return msg;&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;    return msg;&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="message_t* Receive.receive(message_t* msg, void *payload, uint8_t len)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    uartbusy = FALSE;&#xd;&#xa;&#x9;    if (call UARTQueue.empty() == FALSE) {&#xd;&#xa;&#x9;      // We just finished a UART send, and the uart queue is&#xd;&#xa;&#x9;      // non-empty.  Let's start a new one.&#xd;&#xa;&#x9;      message_t *queuemsg = call UARTQueue.dequeue();&#xd;&#xa;&#x9;      if (queuemsg == NULL) {&#xd;&#xa;&#x9;        fatal_problem();&#xd;&#xa;&#x9;        return;&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;      memcpy(&amp;uartbuf, queuemsg, sizeof(message_t));&#xd;&#xa;&#x9;      if (call UARTMessagePool.put(queuemsg) != SUCCESS) {&#xd;&#xa;&#x9;        fatal_problem();&#xd;&#xa;&#x9;        return;&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;      post uartSendTask();&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="SerialSend.sendDone(message_t *msg, error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    oscilloscope_t *omsg = payload;&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    report_received();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    // If it receive a newer version, update the interval. &#xd;&#xa;&#x9;    if (omsg->version > local.version) {&#xd;&#xa;&#x9;      local.version = omsg->version;&#xd;&#xa;&#x9;      local.interval = omsg->interval;&#xd;&#xa;&#x9;      startTimer();&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    // If it hear from a future count, jump ahead but suppress the change.&#xd;&#xa;&#x9;    if (omsg->count > local.count) {&#xd;&#xa;&#x9;      local.count = omsg->count;&#xd;&#xa;&#x9;      suppress_count_change = TRUE;&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    return msg;&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="message_t* Snoop.receive(message_t* msg, void* payload, uint8_t len)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    if (reading == NREADINGS) {&#xd;&#xa;&#x9;      if (!sendbusy) {&#xd;&#xa;&#x9;&#x9;oscilloscope_t *o = (oscilloscope_t *)call Send.getPayload(&amp;sendbuf, sizeof(oscilloscope_t));&#xd;&#xa;&#x9;&#x9;if (o == NULL) {&#xd;&#xa;&#x9;&#x9;  fatal_problem();&#xd;&#xa;&#x9;&#x9;  return;&#xd;&#xa;&#x9;&#x9;}&#xd;&#xa;&#x9;&#x9;memcpy(o, &amp;local, sizeof(local));&#xd;&#xa;&#x9;&#x9;if (call Send.send(&amp;sendbuf, sizeof(local)) == SUCCESS)&#xd;&#xa;&#x9;&#x9;  sendbusy = TRUE;&#xd;&#xa;&#x9;        else&#xd;&#xa;&#x9;          report_problem();&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;      &#xd;&#xa;&#x9;      reading = 0;&#xd;&#xa;&#x9;      /* Part 2 of cheap &quot;time sync&quot;: increment our count if we didn't&#xd;&#xa;&#x9;         jump ahead. */&#xd;&#xa;&#x9;      if (!suppress_count_change)&#xd;&#xa;&#x9;        local.count++;&#xd;&#xa;&#x9;      suppress_count_change = FALSE;&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    if (call Read.read() != SUCCESS)&#xd;&#xa;&#x9;      fatal_problem();&#xd;&#xa; " Name="Timer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    testCounter++;&#xd;&#xa;&#x9;&#x9;dbg(&quot;MultihopOscilloscopeC&quot;, &quot;TestTimer was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="TestTimer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    if (err != SUCCESS) {&#xd;&#xa;&#x9;     call RadioControl.stop();&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;&#x9;dbg(&quot;MultihopOscilloscopeC&quot;, &quot;RadioControl was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="RadioControl.startDone(error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;  if (err == SUCCESS) {&#xd;&#xa;&#x9;  dbg(&quot;MultihopOscilloscopeC&quot;, &quot;RadioControl was stop successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;  }  &#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="RadioControl.stopDone(error_t err)"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;  /* task content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9; " Name="testTask();"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;  /* task content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9; " Name="uartSendTask();"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;  /* task content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    if (call SerialSend.send(0xffff, &amp;uartbuf, uartlen) != SUCCESS) {&#xd;&#xa;&#x9;      report_problem();&#xd;&#xa;&#x9;    } else {&#xd;&#xa;&#x9;      uartbusy = TRUE;&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="uartSendTask()"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;  /* task content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;&#x9;&#x9;testCounter++;&#xd;&#xa;&#x9;&#x9;if (call TestTimer.isRunning() != TRUE)&#xd;&#xa;&#x9;&#x9;{&#xd;&#xa;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#x9;dbg(&quot;MultihopOscilloscopeC&quot;, &quot;TestTimer still running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;&#x9;}&#xd;&#xa;&#x9;&#x9;else&#xd;&#xa;&#x9;&#x9;{&#xd;&#xa;&#x9;&#x9;    post testTask();&#xd;&#xa;&#x9;&#x9;&#x9;dbg(&quot;MultihopOscilloscopeC&quot;, &quot;TestTimer stop running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;&#x9;}&#xd;&#xa;&#x9;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;&#xd;&#xa;&#x9; " Name="testTask()"/>
+                </has_module_implementation>
+            </containsModule>
+            <hasIncludeDecleration Name="Timer.h"/>
+            <hasIncludeDecleration Name="MultihopOscilloscope.h"/>
+        </hasComponent>
+        <hasComponent Name="Configuration Component">
+            <containsConfiguration Name="MultihopOscilloscopeAppC">
+                <has_configuration_signature Name="MultihopOscilloscopeAppC"/>
+                <has_configuration_implementation>
+                    <hasWiring Description="">
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.Boot -> MainC"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.Timer -> TimerMilliC"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.Leds -> LedsC"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.RadioControl -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.SerialControl -> SerialActiveMessageC"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.RoutingControl -> Collector"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.SerialSend -> SerialAMSenderC.AMSend"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.Snoop -> Collector.Snoop[AM_OSCILLOSCOPE]"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.Receive -> Collector.Receive[AM_OSCILLOSCOPE]"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.RootControl -> Collector"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.UARTMessagePool -> UARTMessagePoolP"/>
+                        <has_nesC_wiring_code Content="MultihopOscilloscopeC.UARTQueue -> UARTQueueP"/>
+                        <has_nesC_wiring_code Content="DebugSender.Boot -> MainC"/>
+                        <has_nesC_wiring_code Content="DebugSender.UARTSend -> DebugSerialSender"/>
+                        <has_nesC_wiring_code Content="DebugSender.MessagePool -> DebugMessagePool"/>
+                        <has_nesC_wiring_code Content="DebugSender.SendQueue -> DebugSendQueue"/>
+                        <has_nesC_wiring_code Content="Collector.CollectionDebug -> DebugSender"/>
+                    </hasWiring>
+                    <definesComponents Name="MainC"/>
+                    <definesComponents Name="MultihopOscilloscopeC"/>
+                    <definesComponents Name="LedsC"/>
+                    <definesComponents Name="new TimerMilliC()"/>
+                    <definesComponents Name="new DemoSensorC() as Sensor"/>
+                    <definesComponents Name="new TimerMilliC() as TestTimer"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                    <definesComponents Name="CollectionC as Collector"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                    <definesComponents Name="new CollectionSenderC(AM_OSCILLOSCOPE)"/>
+                    <definesComponents Name="SerialActiveMessageC"/>
+                    <definesComponents Name="new SerialAMSenderC(AM_OSCILLOSCOPE)"/>
+                    <definesComponents Name="new PoolC(message_t, 10) as UARTMessagePoolP"/>
+                    <definesComponents Name="new QueueC(message_t*, 10) as UARTQueueP"/>
+                    <definesComponents Name="new PoolC(message_t, 20) as DebugMessagePool"/>
+                    <definesComponents Name="new QueueC(message_t*, 20) as DebugSendQueue"/>
+                    <definesComponents Name="new SerialAMSenderC(AM_CTP_DEBUG) as DebugSerialSender"/>
+                    <definesComponents Name="UARTDebugSenderP as DebugSender"/>
+                </has_configuration_implementation>
+            </containsConfiguration>
+        </hasComponent>
+    </hasApplication>
+</tinyos_metamodel:Mote>

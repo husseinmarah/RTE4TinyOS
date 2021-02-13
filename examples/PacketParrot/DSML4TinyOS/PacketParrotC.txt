@@ -1,0 +1,5 @@
+original Configuration file line of codes: 23
+generated Configuration file line of codes: 23
+
+original Module file, line of codes: 94
+generated Module file line of codes: 43

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0"
+    xmlns:tinyos_metamodel="http://emf.tinyos_metamodel"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://emf.tinyos_metamodel tinyos_metamodel.ecore">
+    <hasApplication Name="PacketParrot">
+        <hasComponent Name="Module Component">
+            <containsModule Name="PacketParrotP">
+                <has_module_signature Name="PacketParrotP">
+                    <usesInterface Name="Boot"/>
+                    <usesInterface Name="Leds"/>
+                    <usesInterface Name="Packet"/>
+                    <usesInterface Name="Send"/>
+                    <usesInterface Name="Receive"/>
+                    <usesInterface Name="SplitControl as AMControl"/>
+                    <usesInterface Name="LogRead"/>
+                    <usesInterface Name="LogWrite"/>
+                    <usesInterface Name="Timer&lt;TMilli> as Timer0"/>
+                </has_module_signature>
+                <has_module_implementation>
+                    <has_nesC_code Content="enum {&#xd;&#xa;    INTER_PACKET_INTERVAL = 25&#xd;&#xa;  };"/>
+                    <has_nesC_code Content="bool m_busy = TRUE;"/>
+                    <has_nesC_code Content="logentry_t m_entry;"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call AMControl.start();&#xd;&#xa;  " Name="Boot.booted()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (err == SUCCESS) {&#xd;&#xa;      if (call LogRead.read(&amp;m_entry, sizeof(logentry_t)) != SUCCESS) {&#xd;&#xa;&#x9;// Handle error.&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;    else {&#xd;&#xa;      call AMControl.start();&#xd;&#xa;    }&#xd;&#xa;  " Name="AMControl.startDone(error_t err)"/>
+                    <implementsEvent Contents="&#xd;&#xa;  " Name="AMControl.stopDone(error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if ( (len == sizeof(logentry_t)) &amp;&amp; (buf == &amp;m_entry) ) {&#xd;&#xa;      call Send.send(&amp;m_entry.msg, m_entry.len);&#xd;&#xa;      call Leds.led1On();&#xd;&#xa;    }&#xd;&#xa;    else {&#xd;&#xa;      if (call LogWrite.erase() != SUCCESS) {&#xd;&#xa;&#x9;// Handle error.&#xd;&#xa;      }&#xd;&#xa;      call Leds.led0On();&#xd;&#xa;    }&#xd;&#xa;  " Name="LogRead.readDone(void* buf, storage_len_t len, error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call Leds.led1Off();&#xd;&#xa;    if ( (err == SUCCESS) &amp;&amp; (msg == &amp;m_entry.msg) ) {&#xd;&#xa;      call Packet.clear(&amp;m_entry.msg);&#xd;&#xa;      if (call LogRead.read(&amp;m_entry, sizeof(logentry_t)) != SUCCESS) {&#xd;&#xa;&#x9;// Handle error.&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;    else {&#xd;&#xa;      call Timer0.startOneShot(INTER_PACKET_INTERVAL);&#xd;&#xa;    }&#xd;&#xa;  " Name="Send.sendDone(message_t* msg, error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call Send.send(&amp;m_entry.msg, m_entry.len);&#xd;&#xa;  " Name="Timer0.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (err == SUCCESS) {&#xd;&#xa;      m_busy = FALSE;&#xd;&#xa;    }&#xd;&#xa;    else {&#xd;&#xa;      // Handle error.&#xd;&#xa;    }&#xd;&#xa;    call Leds.led0Off();&#xd;&#xa;  " Name="LogWrite.eraseDone(error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call Leds.led2On();&#xd;&#xa;    if (!m_busy) {&#xd;&#xa;      m_busy = TRUE;&#xd;&#xa;      m_entry.len = len;&#xd;&#xa;      m_entry.msg = *msg;&#xd;&#xa;      if (call LogWrite.append(&amp;m_entry, sizeof(logentry_t)) != SUCCESS) {&#xd;&#xa;&#x9;m_busy = FALSE;&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;    return msg;&#xd;&#xa;  " Name="message_t* Receive.receive(message_t* msg, void* payload, uint8_t len)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    m_busy = FALSE;&#xd;&#xa;    call Leds.led2Off();&#xd;&#xa;  " Name="LogWrite.appendDone(void* buf, storage_len_t len, &#xd;&#xa;                                 bool recordsLost, error_t err)"/>
+                    <implementsEvent Contents="&#xd;&#xa;  " Name="LogRead.seekDone(error_t err)"/>
+                    <implementsEvent Contents="&#xd;&#xa;  " Name="LogWrite.syncDone(error_t err)"/>
+                </has_module_implementation>
+            </containsModule>
+        </hasComponent>
+        <hasComponent Name="Configuration Component">
+            <containsConfiguration Name="PacketParrotC">
+                <has_configuration_signature Name="PacketParrotC"/>
+                <has_configuration_implementation>
+                    <hasWiring Description="">
+                        <has_nesC_wiring_code Content="App.Boot -> MainC"/>
+                        <has_nesC_wiring_code Content="App.Leds -> LedsC"/>
+                        <has_nesC_wiring_code Content="App.Packet -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="App.AMControl -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="App.Send -> CC2420CsmaC"/>
+                        <has_nesC_wiring_code Content="App.Receive -> CC2420CsmaC"/>
+                        <has_nesC_wiring_code Content="App.LogRead -> LogStorageC"/>
+                        <has_nesC_wiring_code Content="App.LogWrite -> LogStorageC"/>
+                        <has_nesC_wiring_code Content="App.Timer0 -> Timer0"/>
+                    </hasWiring>
+                    <definesComponents Name="MainC"/>
+                    <definesComponents Name="LedsC"/>
+                    <definesComponents Name="PacketParrotP as App"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                    <definesComponents Name="CC2420CsmaC"/>
+                    <definesComponents Name="new LogStorageC(VOLUME_LOGTEST, TRUE)"/>
+                    <definesComponents Name="new TimerMilliC() as Timer0"/>
+                </has_configuration_implementation>
+            </containsConfiguration>
+            <hasIncludeDecleration Name="&lt;Timer.h>"/>
+            <hasIncludeDecleration Name="StorageVolumes.h"/>
+        </hasComponent>
+    </hasApplication>
+</tinyos_metamodel:Mote>

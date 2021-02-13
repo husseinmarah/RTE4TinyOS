@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0"
+    xmlns:tinyos_metamodel="http://emf.tinyos_metamodel"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://emf.tinyos_metamodel tinyos_metamodel.ecore">
+    <hasApplication Name="BarrierBounce">
+        <hasComponent Name="Module Component">
+            <containsModule Name="BarrierBounceC">
+                <has_module_signature Name="BarrierBounceC">
+                    <usesInterface Name="Boot"/>
+                    <usesInterface Name="BlockingStdControl as BlockingAMControl"/>
+                    <usesInterface Name="Barrier"/>
+                    <usesInterface Name="Thread as BounceThread0"/>
+                    <usesInterface Name="BlockingAMSend as BlockingAMSend0"/>
+                    <usesInterface Name="BlockingReceive as BlockingReceive0"/>
+                    <usesInterface Name="Thread as BounceThread1"/>
+                    <usesInterface Name="BlockingAMSend as BlockingAMSend1"/>
+                    <usesInterface Name="BlockingReceive as BlockingReceive1"/>
+                    <usesInterface Name="Thread as BounceThread2"/>
+                    <usesInterface Name="BlockingAMSend as BlockingAMSend2"/>
+                    <usesInterface Name="BlockingReceive as BlockingReceive2"/>
+                    <usesInterface Name="Thread as SyncThread"/>
+                    <usesInterface Name="Leds"/>
+                    <usesInterface Name="Timer&lt;TMilli> as EditedTimer"/>
+                    <usesInterface Name="SplitControl as RadioControl"/>
+                </has_module_signature>
+                <has_module_implementation>
+                    <has_nesC_code Content="uint8_t testCounter;"/>
+                    <has_nesC_code Content="message_t m0,m1,m2;"/>
+                    <has_nesC_code Content="barrier_t b0;"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    //Reset all barriers used in this program at initialization&#xd;&#xa;    call Barrier.reset(&amp;b0, 4);&#xd;&#xa;&#xd;&#xa;    //Start the sync thread to power up the AM layer&#xd;&#xa;    call SyncThread.start(NULL);&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;call EditedTimer.startPeriodic( 600 );&#xd;&#xa;&#x9;&#x9;call RadioControl.start();&#xd;&#xa;  " Name="Boot.booted()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    for(;;) {&#xd;&#xa;      call Leds.led0Off();&#xd;&#xa;      call BlockingAMSend0.send(!TOS_NODE_ID, &amp;m0, 0);&#xd;&#xa;      if(call BlockingReceive0.receive(&amp;m0, 5000) == SUCCESS) {&#xd;&#xa;        call Barrier.block(&amp;b0);&#xd;&#xa;        call Leds.led0On();&#xd;&#xa;      &#x9;call BounceThread0.sleep(500);&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;  " Name="BounceThread0.run(void* arg)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    for(;;) {&#xd;&#xa;      call Leds.led1Off();&#xd;&#xa;      call BlockingAMSend1.send(!TOS_NODE_ID, &amp;m1, 0);&#xd;&#xa;      if(call BlockingReceive1.receive(&amp;m1, 5000) == SUCCESS) {&#xd;&#xa;        call Barrier.block(&amp;b0);&#xd;&#xa;        call Leds.led1On();&#xd;&#xa;      &#x9;call BounceThread1.sleep(500);&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;  " Name="BounceThread1.run(void* arg)"/>
+                    <implementsEvent
+                        Contents=" &#xd;&#xa;    for(;;) {&#xd;&#xa;      call Leds.led2Off();&#xd;&#xa;      call BlockingAMSend2.send(!TOS_NODE_ID, &amp;m2, 0);&#xd;&#xa;      if(call BlockingReceive2.receive(&amp;m2, 5000) == SUCCESS) {&#xd;&#xa;        call Barrier.block(&amp;b0);&#xd;&#xa;        call Leds.led2On();&#xd;&#xa;      &#x9;call BounceThread2.sleep(500);&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;  " Name="BounceThread2.run(void* arg)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    //Once the am layer is powered on, start the rest of&#xd;&#xa;    //  the threads&#xd;&#xa;    call BlockingAMControl.start();&#xd;&#xa;    call BounceThread0.start(NULL);&#xd;&#xa;    call BounceThread1.start(NULL);&#xd;&#xa;    call BounceThread2.start(NULL);&#xd;&#xa;    &#xd;&#xa;    for(;;) {&#xd;&#xa;      call Barrier.block(&amp;b0);&#xd;&#xa;      call Barrier.reset(&amp;b0, 4);&#xd;&#xa;    }&#xd;&#xa;  " Name="SyncThread.run(void* arg)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    testCounter++;&#xd;&#xa;&#x9;dbg(&quot;BounceC&quot;, &quot;EditedTimer was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;  " Name="EditedTimer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (err != SUCCESS) {&#xd;&#xa;     call RadioControl.stop();&#xd;&#xa;    }&#xd;&#xa;&#x9;dbg(&quot;BounceC&quot;, &quot;RadioControl was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;  " Name="RadioControl.startDone(error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;  if (err == SUCCESS) {&#xd;&#xa;  dbg(&quot;BounceC&quot;, &quot;RadioControl was stop successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;  }  &#xd;&#xa;  " Name="RadioControl.stopDone(error_t err)"/>
+                    <implementsTask Name="testTask();"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;&#x9;testCounter++;&#xd;&#xa;&#x9;if (call EditedTimer.isRunning() != TRUE)&#xd;&#xa;&#x9;{&#xd;&#xa;&#x9;&#x9;&#xd;&#xa;&#x9;&#x9;dbg(&quot;BounceC&quot;, &quot;EditedTimer still running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;}&#xd;&#xa;&#x9;else&#xd;&#xa;&#x9;{&#xd;&#xa;&#x9;    post testTask();&#xd;&#xa;&#x9;&#x9;dbg(&quot;BounceC&quot;, &quot;EditedTimer stop running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;}&#xd;&#xa;&#x9;&#x9;&#xd;&#xa;&#x9;" Name="testTask()"/>
+                </has_module_implementation>
+            </containsModule>
+        </hasComponent>
+        <hasComponent Name="Configuration Component">
+            <containsConfiguration Name="BarrierBounceAppC">
+                <has_configuration_signature Name="BarrierBounceAppC"/>
+                <has_configuration_implementation>
+                    <hasWiring Description="">
+                        <has_nesC_wiring_code Content="MainC.Boot &lt;- BounceC"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingAMControl -> BlockingActiveMessageC"/>
+                        <has_nesC_wiring_code Content="BounceC.Leds -> LedsC"/>
+                        <has_nesC_wiring_code Content="BounceC.EditedTimer -> EditedTimer"/>
+                        <has_nesC_wiring_code Content="BounceC.RadioControl -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="BounceC.Barrier -> ThreadSynchronizationC"/>
+                        <has_nesC_wiring_code Content="BounceC.BounceThread0 -> BounceThread0"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingAMSend0 -> BlockingAMSender0"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingReceive0 -> BlockingAMReceiver0"/>
+                        <has_nesC_wiring_code Content="BounceC.BounceThread1 -> BounceThread1"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingAMSend1 -> BlockingAMSender1"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingReceive1 -> BlockingAMReceiver1"/>
+                        <has_nesC_wiring_code Content="BounceC.BounceThread2 -> BounceThread2"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingAMSend2 -> BlockingAMSender2"/>
+                        <has_nesC_wiring_code Content="BounceC.BlockingReceive2 -> BlockingAMReceiver2"/>
+                        <has_nesC_wiring_code Content="BounceC.SyncThread -> SyncThread"/>
+                    </hasWiring>
+                    <definesComponents Name="MainC, BarrierBounceC as BounceC,  LedsC"/>
+                    <definesComponents Name="BlockingActiveMessageC"/>
+                    <definesComponents Name="new TimerMilliC() as EditedTimer"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                    <definesComponents Name="ThreadSynchronizationC"/>
+                    <definesComponents Name="new ThreadC(BOUNCE_THREAD0_STACK_SIZE) as BounceThread0"/>
+                    <definesComponents Name="new BlockingAMSenderC(AM_BOUNCE0_MSG) as BlockingAMSender0"/>
+                    <definesComponents Name="new BlockingAMReceiverC(AM_BOUNCE0_MSG) as BlockingAMReceiver0"/>
+                    <definesComponents Name="new ThreadC(BOUNCE_THREAD1_STACK_SIZE) as BounceThread1"/>
+                    <definesComponents Name="new BlockingAMSenderC(AM_BOUNCE1_MSG) as BlockingAMSender1"/>
+                    <definesComponents Name="new BlockingAMReceiverC(AM_BOUNCE1_MSG) as BlockingAMReceiver1"/>
+                    <definesComponents Name="new ThreadC(BOUNCE_THREAD2_STACK_SIZE) as BounceThread2"/>
+                    <definesComponents Name="new BlockingAMSenderC(AM_BOUNCE2_MSG) as BlockingAMSender2"/>
+                    <definesComponents Name="new BlockingAMReceiverC(AM_BOUNCE2_MSG) as BlockingAMReceiver2"/>
+                    <definesComponents Name="new ThreadC(SYNC_THREAD_STACK_SIZE) as SyncThread"/>
+                </has_configuration_implementation>
+            </containsConfiguration>
+            <hasIncludeDecleration Name="barrier_bounce.h"/>
+            <hasIncludeDecleration Name="stack.h"/>
+        </hasComponent>
+    </hasApplication>
+</tinyos_metamodel:Mote>

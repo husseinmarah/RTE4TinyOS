@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0"
+    xmlns:tinyos_metamodel="http://emf.tinyos_metamodel"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://emf.tinyos_metamodel tinyos_metamodel.ecore">
+    <hasApplication Name="TestDissemination">
+        <hasComponent Name="Module Component">
+            <containsModule Name="TestDisseminationC">
+                <has_module_signature Name="TestDisseminationC">
+                    <usesInterface Name="Boot"/>
+                    <usesInterface Name="SplitControl as RadioControl"/>
+                    <usesInterface Name="StdControl as DisseminationControl"/>
+                    <usesInterface Name="DisseminationValue&lt;uint32_t> as Value32"/>
+                    <usesInterface Name="DisseminationUpdate&lt;uint32_t> as Update32"/>
+                    <usesInterface Name="DisseminationValue&lt;uint16_t> as Value16"/>
+                    <usesInterface Name="DisseminationUpdate&lt;uint16_t> as Update16"/>
+                    <usesInterface Name="Leds"/>
+                    <usesInterface Name="Timer&lt;TMilli>"/>
+                    <usesInterface Name="Timer&lt;TMilli> as EditedTestTimer"/>
+                    <usesInterface Name="SplitControl as EditedTestRadioControl"/>
+                </has_module_signature>
+                <has_module_implementation>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    uint32_t initialVal32 = 123456;&#xd;&#xa;&#x9;    uint16_t initialVal16 = 1234;&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    call Value32.set( &amp;initialVal32 ); &#xd;&#xa;&#x9;    call Value16.set( &amp;initialVal16 ); &#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    call RadioControl.start();&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="Boot.booted()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    &#xd;&#xa;&#x9;    if ( result != SUCCESS ) {&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;      call RadioControl.start();&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    } else {&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;      call DisseminationControl.start();&#xd;&#xa;&#x9;      &#xd;&#xa;&#x9;      if ( TOS_NODE_ID % 4 == 1 ) {&#xd;&#xa;&#x9;&#x9;call Timer.startPeriodic( 1024 * 20 );&#xd;&#xa;&#x9;      } else {&#xd;&#xa;&#x9;&#x9;call Timer.startPeriodic( 1024 );&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="RadioControl.startDone( error_t result )"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;    &#xd;&#xa;&#x9; " Name="RadioControl.stopDone( error_t result )"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    uint32_t newVal32 = 0xDEADBEEF;&#xd;&#xa;&#x9;    uint16_t newVal16 = 0xABCD;&#xd;&#xa;&#x9;&#xd;&#xa;&#x9;    if ( TOS_NODE_ID % 4 == 1 ) {&#xd;&#xa;&#x9;      call Leds.led0Toggle();&#xd;&#xa;&#x9;      call Leds.led1Toggle();&#xd;&#xa;&#x9;      call Update32.change( &amp;newVal32 );&#xd;&#xa;&#x9;      call Update16.change( &amp;newVal16 );&#xd;&#xa;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;TestDisseminationC: Timer fired.\n&quot;);&#xd;&#xa;&#x9;    } else {&#xd;&#xa;&#x9;      const uint32_t* newVal = call Value32.get();&#xd;&#xa;&#x9;      if ( *newVal == 123456 ) {&#xd;&#xa;&#x9;&#x9;call Leds.led2Toggle();&#xd;&#xa;&#x9;      }&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="Timer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    const uint32_t* newVal = call Value32.get();&#xd;&#xa;&#x9;    if ( *newVal == 0xDEADBEEF ) {&#xd;&#xa;&#x9;      call Leds.led0Toggle();&#xd;&#xa;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new correct 32-bit value @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;    else {&#xd;&#xa;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new incorrect 32-bit value.\n&quot;);&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="Value32.changed()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   &#xd;&#xa;&#x9;    const uint16_t* newVal = call Value16.get();&#xd;&#xa;&#x9;    if ( *newVal == 0xABCD ) {&#xd;&#xa;&#x9;      call Leds.led1Toggle();&#xd;&#xa;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new correct 16-bit value @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;    else {&#xd;&#xa;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new incorrect 16-bit value: 0x%hx\n&quot;, *newVal);&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;  &#xd;&#xa;&#x9; " Name="Value16.changed()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   sharedCounter++;&#xd;&#xa;&#x9;&#x9;dbg(&quot;TestDisseminationC&quot;, &quot;EditedTestTimer was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9; " Name="EditedTestTimer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   if (err != SUCCESS) {&#xd;&#xa;&#x9;     call EditedTestRadioControl.stop();&#xd;&#xa;&#x9;    }&#xd;&#xa;&#x9;&#x9;dbg(&quot;TestDisseminationC&quot;, &quot;EditedTestRadioControl was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;&#xd;&#xa;&#x9; " Name="EditedTestRadioControl.startDone(error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;&#x9;   /* event content */&#xd;&#xa;&#x9;   if (err != SUCCESS) {&#xd;&#xa;&#x9;  dbg(&quot;TestDisseminationC&quot;, &quot;EditedTestRadioControl was not stop successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;  }  &#xd;&#xa;&#x9; " Name="EditedTestRadioControl.stopDone(error_t err)"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;  /* task content */&#xd;&#xa;&#x9;   sharedCounter++;&#xd;&#xa;&#x9;&#x9;if (call EditedTestTimer.isRunning() != TRUE)&#xd;&#xa;&#x9;&#x9;{&#xd;&#xa;&#x9;&#x9;&#x9;dbg(&quot;TestDisseminationC&quot;, &quot;EditedTestTimer still running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;&#x9;}&#xd;&#xa;&#x9;&#x9;else&#xd;&#xa;&#x9;&#x9;{&#xd;&#xa;&#x9;&#x9;    post incrementCounter();&#xd;&#xa;&#x9;&#x9;&#x9;dbg(&quot;TestDisseminationC&quot;, &quot;EditedTestTimer stop running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;&#x9;}&#xd;&#xa;&#x9; " Name="incrementCounter()"/>
+                </has_module_implementation>
+            </containsModule>
+            <hasIncludeDecleration Name="&lt;Timer.h>"/>
+        </hasComponent>
+        <hasComponent Name="Configuration Component">
+            <containsConfiguration Name="TestDisseminationAppC">
+                <has_configuration_signature Name="TestDisseminationAppC"/>
+                <has_configuration_implementation>
+                    <hasWiring Description="">
+                        <has_nesC_wiring_code Content="TestDisseminationC.Boot -> MainC"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.RadioControl -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.DisseminationControl -> DisseminationC"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.Value32 -> Object32C"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.Update32 -> Object32C"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.Value16 -> Object16C"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.Update16 -> Object16C"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.Leds -> LedsC"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.Timer -> TimerMilliC"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.EditedTestTimer -> EditedTestTimer"/>
+                        <has_nesC_wiring_code Content="TestDisseminationC.EditedTestRadioControl -> ActiveMessageC"/>
+                    </hasWiring>
+                    <definesComponents Name="TestDisseminationC"/>
+                    <definesComponents Name="MainC"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                    <definesComponents Name="DisseminationC"/>
+                    <definesComponents Name="new DisseminatorC(uint32_t, 0x1234) as Object32C"/>
+                    <definesComponents Name="new DisseminatorC(uint16_t, 0x2345) as Object16C"/>
+                    <definesComponents Name="LedsC"/>
+                    <definesComponents Name="new TimerMilliC()"/>
+                    <definesComponents Name="new TimerMilliC() as EditedTestTimer"/>
+                </has_configuration_implementation>
+            </containsConfiguration>
+        </hasComponent>
+    </hasApplication>
+</tinyos_metamodel:Mote>

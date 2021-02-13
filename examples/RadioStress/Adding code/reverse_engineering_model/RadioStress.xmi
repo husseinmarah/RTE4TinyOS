@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0"
+    xmlns:tinyos_metamodel="http://emf.tinyos_metamodel"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://emf.tinyos_metamodel tinyos_metamodel.ecore">
+    <hasApplication Name="RadioStress">
+        <hasComponent Name="Module Component">
+            <containsModule Name="RadioStressC">
+                <has_module_signature Name="RadioStressC">
+                    <usesInterface Name="Boot"/>
+                    <usesInterface Name="BlockingStdControl as BlockingAMControl"/>
+                    <usesInterface Name="Thread as RadioStressThread0"/>
+                    <usesInterface Name="BlockingAMSend as BlockingAMSend0"/>
+                    <usesInterface Name="BlockingReceive as BlockingReceive0"/>
+                    <usesInterface Name="Thread as RadioStressThread1"/>
+                    <usesInterface Name="BlockingAMSend as BlockingAMSend1"/>
+                    <usesInterface Name="BlockingReceive as BlockingReceive1"/>
+                    <usesInterface Name="Thread as RadioStressThread2"/>
+                    <usesInterface Name="BlockingAMSend as BlockingAMSend2"/>
+                    <usesInterface Name="BlockingReceive as BlockingReceive2"/>
+                    <usesInterface Name="Leds"/>
+                </has_module_signature>
+                <has_module_implementation>
+                    <has_nesC_code Content="message_t m0;"/>
+                    <has_nesC_code Content="message_t m1;"/>
+                    <has_nesC_code Content="message_t m2;"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call RadioStressThread0.start(NULL);&#xd;&#xa;    call RadioStressThread1.start(NULL);&#xd;&#xa;    call RadioStressThread2.start(NULL);&#xd;&#xa;  " Name="Boot.booted()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call BlockingAMControl.start();&#xd;&#xa;    for(;;) {&#xd;&#xa;      if(TOS_NODE_ID == 0) {&#xd;&#xa;        call BlockingReceive0.receive(&amp;m0, 5000);&#xd;&#xa;        call Leds.led0Toggle();&#xd;&#xa;      }&#xd;&#xa;      else {&#xd;&#xa;        call BlockingAMSend0.send(!TOS_NODE_ID, &amp;m0, 0);&#xd;&#xa;        call Leds.led0Toggle();&#xd;&#xa;        //call RadioStressThread0.sleep(500);&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;  " Name="RadioStressThread0.run(void* arg)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call BlockingAMControl.start();&#xd;&#xa;    for(;;) {&#xd;&#xa;      if(TOS_NODE_ID == 0) {&#xd;&#xa;        call BlockingReceive1.receive(&amp;m1, 5000);&#xd;&#xa;        call Leds.led1Toggle();&#xd;&#xa;      }&#xd;&#xa;      else {&#xd;&#xa;        call BlockingAMSend1.send(!TOS_NODE_ID, &amp;m1, 0);&#xd;&#xa;        call Leds.led1Toggle();&#xd;&#xa;        //call RadioStressThread1.sleep(500);&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;  " Name="RadioStressThread1.run(void* arg)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    call BlockingAMControl.start();&#xd;&#xa;    for(;;) {&#xd;&#xa;      if(TOS_NODE_ID == 0) {&#xd;&#xa;        call BlockingReceive2.receive(&amp;m2, 5000);&#xd;&#xa;        call Leds.led2Toggle();&#xd;&#xa;      }&#xd;&#xa;      else {&#xd;&#xa;        call BlockingAMSend2.send(!TOS_NODE_ID, &amp;m2, 0);&#xd;&#xa;        call Leds.led2Toggle();&#xd;&#xa;        //call RadioStressThread2.sleep(500);&#xd;&#xa;      }&#xd;&#xa;    }&#xd;&#xa;  " Name="RadioStressThread2.run(void* arg)"/>
+                </has_module_implementation>
+            </containsModule>
+            <hasIncludeDecleration Name="AM.h"/>
+        </hasComponent>
+        <hasComponent Name="Configuration Component">
+            <containsConfiguration Name="RadioStressAppC">
+                <has_configuration_signature Name="RadioStressAppC"/>
+                <has_configuration_implementation>
+                    <hasWiring Description="">
+                        <has_nesC_wiring_code Content="MainC.Boot &lt;- RadioStressC"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingAMControl -> BlockingActiveMessageC"/>
+                        <has_nesC_wiring_code Content="RadioStressC.Leds -> LedsC"/>
+                        <has_nesC_wiring_code Content="RadioStressC.RadioStressThread0 -> RadioStressThread0"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingAMSend0 -> BlockingAMSender0"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingReceive0 -> BlockingAMReceiver0"/>
+                        <has_nesC_wiring_code Content="RadioStressC.RadioStressThread1 -> RadioStressThread1"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingAMSend1 -> BlockingAMSender1"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingReceive1 -> BlockingAMReceiver1"/>
+                        <has_nesC_wiring_code Content="RadioStressC.RadioStressThread2 -> RadioStressThread2"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingAMSend2 -> BlockingAMSender2"/>
+                        <has_nesC_wiring_code Content="RadioStressC.BlockingReceive2 -> BlockingAMReceiver2"/>
+                    </hasWiring>
+                    <definesComponents Name="MainC"/>
+                    <definesComponents Name="RadioStressC"/>
+                    <definesComponents Name="LedsC"/>
+                    <definesComponents Name="BlockingActiveMessageC"/>
+                    <definesComponents Name="new ThreadC(300) as RadioStressThread0"/>
+                    <definesComponents Name="new BlockingAMSenderC(220) as BlockingAMSender0"/>
+                    <definesComponents Name="new BlockingAMReceiverC(220) as BlockingAMReceiver0"/>
+                    <definesComponents Name="new ThreadC(300) as RadioStressThread1"/>
+                    <definesComponents Name="new BlockingAMSenderC(221) as BlockingAMSender1"/>
+                    <definesComponents Name="new BlockingAMReceiverC(221) as BlockingAMReceiver1"/>
+                    <definesComponents Name="new ThreadC(300) as RadioStressThread2"/>
+                    <definesComponents Name="new BlockingAMSenderC(222) as BlockingAMSender2"/>
+                    <definesComponents Name="new BlockingAMReceiverC(222) as BlockingAMReceiver2"/>
+                </has_configuration_implementation>
+            </containsConfiguration>
+        </hasComponent>
+    </hasApplication>
+</tinyos_metamodel:Mote>

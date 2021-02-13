@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:tinyos_metamodel="http://emf.tinyos_metamodel">
+  <hasApplication Name="TestDissemination">
+    <hasComponent Name="Module Component">
+      <containsModule Name="TestDisseminationC">
+        <has_module_signature Name="TestDisseminationC">
+          <usesInterface Name="Boot"/>
+          <usesInterface Name="SplitControl as RadioControl"/>
+          <usesInterface Name="StdControl as DisseminationControl"/>
+          <usesInterface Name="DisseminationValue&lt;uint32_t> as Value32"/>
+          <usesInterface Name="DisseminationUpdate&lt;uint32_t> as Update32"/>
+          <usesInterface Name="DisseminationValue&lt;uint16_t> as Value16"/>
+          <usesInterface Name="DisseminationUpdate&lt;uint16_t> as Update16"/>
+          <usesInterface Name="Leds"/>
+          <usesInterface Name="Timer&lt;TMilli>"/>
+        </has_module_signature>
+        <has_module_implementation>
+          <implementsEvent Name="Boot.booted()" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    uint32_t initialVal32 = 123456;&#xD;&#xA;&#x9;    uint16_t initialVal16 = 1234;&#xD;&#xA;&#x9;&#xD;&#xA;&#x9;    call Value32.set( &amp;initialVal32 ); &#xD;&#xA;&#x9;    call Value16.set( &amp;initialVal16 ); &#xD;&#xA;&#x9;&#xD;&#xA;&#x9;    call RadioControl.start();&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="RadioControl.startDone( error_t result )" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    &#xD;&#xA;&#x9;    if ( result != SUCCESS ) {&#xD;&#xA;&#x9;&#xD;&#xA;&#x9;      call RadioControl.start();&#xD;&#xA;&#x9;&#xD;&#xA;&#x9;    } else {&#xD;&#xA;&#x9;&#xD;&#xA;&#x9;      call DisseminationControl.start();&#xD;&#xA;&#x9;      &#xD;&#xA;&#x9;      if ( TOS_NODE_ID % 4 == 1 ) {&#xD;&#xA;&#x9;&#x9;call Timer.startPeriodic( 1024 * 20 );&#xD;&#xA;&#x9;      } else {&#xD;&#xA;&#x9;&#x9;call Timer.startPeriodic( 1024 );&#xD;&#xA;&#x9;      }&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="RadioControl.stopDone( error_t result )" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;    &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="Timer.fired()" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    uint32_t newVal32 = 0xDEADBEEF;&#xD;&#xA;&#x9;    uint16_t newVal16 = 0xABCD;&#xD;&#xA;&#x9;&#xD;&#xA;&#x9;    if ( TOS_NODE_ID % 4 == 1 ) {&#xD;&#xA;&#x9;      call Leds.led0Toggle();&#xD;&#xA;&#x9;      call Leds.led1Toggle();&#xD;&#xA;&#x9;      call Update32.change( &amp;newVal32 );&#xD;&#xA;&#x9;      call Update16.change( &amp;newVal16 );&#xD;&#xA;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;TestDisseminationC: Timer fired.\n&quot;);&#xD;&#xA;&#x9;    } else {&#xD;&#xA;&#x9;      const uint32_t* newVal = call Value32.get();&#xD;&#xA;&#x9;      if ( *newVal == 123456 ) {&#xD;&#xA;&#x9;&#x9;call Leds.led2Toggle();&#xD;&#xA;&#x9;      }&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="Value32.changed()" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    const uint32_t* newVal = call Value32.get();&#xD;&#xA;&#x9;    if ( *newVal == 0xDEADBEEF ) {&#xD;&#xA;&#x9;      call Leds.led0Toggle();&#xD;&#xA;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new correct 32-bit value @ %s.\n&quot;, sim_time_string());&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    else {&#xD;&#xA;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new incorrect 32-bit value.\n&quot;);&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+          <implementsEvent Name="Value16.changed()" Contents="&#xD;&#xA;&#x9;   /* event content */&#xD;&#xA;&#x9;   &#xD;&#xA;&#x9;    const uint16_t* newVal = call Value16.get();&#xD;&#xA;&#x9;    if ( *newVal == 0xABCD ) {&#xD;&#xA;&#x9;      call Leds.led1Toggle();&#xD;&#xA;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new correct 16-bit value @ %s.\n&quot;, sim_time_string());&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;    else {&#xD;&#xA;&#x9;      dbg(&quot;TestDisseminationC&quot;, &quot;Received new incorrect 16-bit value: 0x%hx\n&quot;, *newVal);&#xD;&#xA;&#x9;    }&#xD;&#xA;&#x9;  &#xD;&#xA;&#x9; "/>
+        </has_module_implementation>
+      </containsModule>
+      <hasIncludeDecleration Name="&lt;Timer.h>"/>
+    </hasComponent>
+    <hasComponent Name="Configuration Component">
+      <containsConfiguration Name="TestDisseminationAppC">
+        <has_configuration_signature Name="TestDisseminationAppC"/>
+        <has_configuration_implementation>
+          <hasWiring Description="">
+            <has_nesC_wiring_code Content="TestDisseminationC.Boot -> MainC"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.RadioControl -> ActiveMessageC"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.DisseminationControl -> DisseminationC"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.Value32 -> Object32C"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.Update32 -> Object32C"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.Value16 -> Object16C"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.Update16 -> Object16C"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.Leds -> LedsC"/>
+            <has_nesC_wiring_code Content="TestDisseminationC.Timer -> TimerMilliC"/>
+          </hasWiring>
+          <definesComponents Name="TestDisseminationC"/>
+          <definesComponents Name="MainC"/>
+          <definesComponents Name="ActiveMessageC"/>
+          <definesComponents Name="DisseminationC"/>
+          <definesComponents Name="new DisseminatorC(uint32_t, 0x1234) as Object32C"/>
+          <definesComponents Name="new DisseminatorC(uint16_t, 0x2345) as Object16C"/>
+          <definesComponents Name="LedsC"/>
+          <definesComponents Name="new TimerMilliC()"/>
+        </has_configuration_implementation>
+      </containsConfiguration>
+    </hasComponent>
+  </hasApplication>
+</tinyos_metamodel:Mote>

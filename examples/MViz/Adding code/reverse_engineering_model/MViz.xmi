@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tinyos_metamodel:Mote xmi:version="2.0"
+    xmlns:tinyos_metamodel="http://emf.tinyos_metamodel"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://emf.tinyos_metamodel tinyos_metamodel.ecore">
+    <hasApplication Name="MViz">
+        <hasComponent Name="Module Component">
+            <containsModule Name="MVizC">
+                <has_module_signature Name="MVizC">
+                    <usesInterface Name="Boot"/>
+                    <usesInterface Name="SplitControl as RadioControl"/>
+                    <usesInterface Name="SplitControl as SerialControl"/>
+                    <usesInterface Name="StdControl as RoutingControl"/>
+                    <usesInterface Name="Send"/>
+                    <usesInterface Name="Receive as Snoop"/>
+                    <usesInterface Name="Receive"/>
+                    <usesInterface Name="AMSend as SerialSend"/>
+                    <usesInterface Name="CollectionPacket"/>
+                    <usesInterface Name="RootControl"/>
+                    <usesInterface Name="Timer&lt;TMilli>"/>
+                    <usesInterface Name="Read&lt;uint16_t>"/>
+                    <usesInterface Name="Leds"/>
+                    <usesInterface Name="CtpInfo"/>
+                    <usesInterface Name="LinkEstimator"/>
+                    <usesInterface Name="Random"/>
+                    <usesInterface Name="Timer&lt;TMilli> as TestTimer"/>
+                    <usesInterface Name="SplitControl as TestRadioControl"/>
+                </has_module_signature>
+                <has_module_implementation>
+                    <has_nesC_code Content="uint8_t uartlen;"/>
+                    <has_nesC_code Content="message_t sendbuf;"/>
+                    <has_nesC_code Content="message_t uartbuf;"/>
+                    <has_nesC_code Content="bool sendbusy=FALSE, uartbusy=FALSE;"/>
+                    <has_nesC_code Content="mviz_msg_t local;"/>
+                    <has_nesC_code Content="uint8_t reading;"/>
+                    <has_nesC_code Content="bool suppress_count_change;"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    local.interval = DEFAULT_INTERVAL;&#xd;&#xa;    local.origin = TOS_NODE_ID;&#xd;&#xa;&#xd;&#xa;    // Beginning our initialization phases:&#xd;&#xa;    if (call RadioControl.start() != SUCCESS)&#xd;&#xa;      fatal_problem();&#xd;&#xa;&#xd;&#xa;    if (call RoutingControl.start() != SUCCESS)&#xd;&#xa;      fatal_problem();&#xd;&#xa;  " Name="Boot.booted()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (error != SUCCESS)&#xd;&#xa;      fatal_problem();&#xd;&#xa;&#xd;&#xa;    if (sizeof(local) > call Send.maxPayloadLength())&#xd;&#xa;      fatal_problem();&#xd;&#xa;&#xd;&#xa;    if (call SerialControl.start() != SUCCESS)&#xd;&#xa;      fatal_problem();&#xd;&#xa;  " Name="RadioControl.startDone(error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (error != SUCCESS)&#xd;&#xa;      fatal_problem();&#xd;&#xa;&#xd;&#xa;    // This is how to set yourself as a root to the collection layer:&#xd;&#xa;    if (local.origin % 500 == 0)&#xd;&#xa;      call RootControl.setRoot();&#xd;&#xa;&#xd;&#xa;    startTimer();&#xd;&#xa;  " Name="SerialControl.startDone(error_t error)"/>
+                    <implementsEvent Contents=" " Name="RadioControl.stopDone(error_t error)"/>
+                    <implementsEvent Contents=" " Name="SerialControl.stopDone(error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (uartbusy == FALSE) {&#xd;&#xa;      mviz_msg_t* in = (mviz_msg_t*)payload;&#xd;&#xa;      mviz_msg_t* out = (mviz_msg_t*)call SerialSend.getPayload(&amp;uartbuf, sizeof(mviz_msg_t));&#xd;&#xa;      if (out == NULL) {&#xd;&#xa;&#x9;return msg;&#xd;&#xa;      }&#xd;&#xa;      else {&#xd;&#xa;&#x9;memcpy(out, in, sizeof(mviz_msg_t));&#xd;&#xa;      }&#xd;&#xa;      uartbusy = TRUE;&#xd;&#xa;      uartlen = sizeof(mviz_msg_t);&#xd;&#xa;      post uartSendTask();&#xd;&#xa;    }&#xd;&#xa;&#xd;&#xa;    return msg;&#xd;&#xa;  " Name="message_t*&#xd;&#xa;  Receive.receive(message_t* msg, void *payload, uint8_t len)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    mviz_msg_t *omsg = payload;&#xd;&#xa;&#xd;&#xa;    report_received();&#xd;&#xa;&#xd;&#xa;    // If we receive a newer version, update our interval. &#xd;&#xa;    if (omsg->version > local.version) {&#xd;&#xa;      local.version = omsg->version;&#xd;&#xa;      local.interval = omsg->interval;&#xd;&#xa;      startTimer();&#xd;&#xa;    }&#xd;&#xa;&#xd;&#xa;    // If we hear from a future count, jump ahead but suppress our own&#xd;&#xa;    // change.&#xd;&#xa;    if (omsg->count > local.count) {&#xd;&#xa;      local.count = omsg->count;&#xd;&#xa;      suppress_count_change = TRUE;&#xd;&#xa;    }&#xd;&#xa;&#xd;&#xa;    return msg;&#xd;&#xa;  " Name="message_t* &#xd;&#xa;  Snoop.receive(message_t* msg, void* payload, uint8_t len)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (!sendbusy) {&#xd;&#xa;      mviz_msg_t *o = (mviz_msg_t *)call Send.getPayload(&amp;sendbuf, sizeof(mviz_msg_t));&#xd;&#xa;      if (o == NULL) {&#xd;&#xa;&#x9;fatal_problem();&#xd;&#xa;&#x9;return;&#xd;&#xa;      }&#xd;&#xa;      memcpy(o, &amp;local, sizeof(local));&#xd;&#xa;      if (call Send.send(&amp;sendbuf, sizeof(local)) == SUCCESS)&#xd;&#xa;&#x9;sendbusy = TRUE;&#xd;&#xa;      else&#xd;&#xa;&#x9;report_problem();&#xd;&#xa;    }&#xd;&#xa;    &#xd;&#xa;    reading = 0;&#xd;&#xa;    /* Part 2 of cheap &quot;time sync&quot;: increment our count if we didn't&#xd;&#xa;       jump ahead. */&#xd;&#xa;    if (!suppress_count_change)&#xd;&#xa;      local.count++;&#xd;&#xa;    suppress_count_change = FALSE;&#xd;&#xa;    call Timer.stop();&#xd;&#xa;    call Timer.startPeriodic(local.interval);    &#xd;&#xa;    if (call Read.read() != SUCCESS)&#xd;&#xa;      fatal_problem();&#xd;&#xa;  " Name="Timer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (error == SUCCESS)&#xd;&#xa;      report_sent();&#xd;&#xa;    else&#xd;&#xa;      report_problem();&#xd;&#xa;&#xd;&#xa;    sendbusy = FALSE;&#xd;&#xa;  " Name="Send.sendDone(message_t* msg, error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    uint16_t val;&#xd;&#xa;    if (result != SUCCESS) {&#xd;&#xa;      data = 0xffff;&#xd;&#xa;      report_problem();&#xd;&#xa;    }&#xd;&#xa;    local.reading = data;&#xd;&#xa;    call CtpInfo.getEtx(&amp;val);&#xd;&#xa;    local.etx = val;&#xd;&#xa;    call CtpInfo.getParent(&amp;val);&#xd;&#xa;    local.link_route_addr = val;&#xd;&#xa;    local.link_route_value = call LinkEstimator.getLinkQuality(local.link_route_addr);&#xd;&#xa;  " Name="Read.readDone(error_t result, uint16_t data)"/>
+                    <implementsEvent Contents="" Name="LinkEstimator.evicted(am_addr_t addr)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    uartbusy = FALSE;&#xd;&#xa;  " Name="SerialSend.sendDone(message_t *msg, error_t error)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    sharedCounter++;&#xd;&#xa;&#x9;dbg(&quot;MVizC&quot;, &quot;TestTimer was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;  " Name="TestTimer.fired()"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;    if (err == SUCCESS) {&#xd;&#xa;     dbg(&quot;MVizC&quot;, &quot;TestRadioControl was run successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;    }&#xd;&#xa;&#x9;call TestRadioControl.stop();&#xd;&#xa;  " Name="TestRadioControl.startDone(error_t err)"/>
+                    <implementsEvent
+                        Contents="&#xd;&#xa;  if (err == SUCCESS) {&#xd;&#xa;  dbg(&quot;MVizC&quot;, &quot;TestRadioControl was stop successfully @ %s.\n&quot;, sim_time_string());&#xd;&#xa;  }  &#xd;&#xa;  " Name="TestRadioControl.stopDone(error_t err)"/>
+                    <implementsTask Name="uartSendTask();"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;    if (call SerialSend.send(0xffff, &amp;uartbuf, uartlen) != SUCCESS) {&#xd;&#xa;      uartbusy = FALSE;&#xd;&#xa;    }&#xd;&#xa;  " Name="uartSendTask()"/>
+                    <implementsTask
+                        Contents="&#xd;&#xa;&#x9;&#x9;sharedCounter++;&#xd;&#xa;&#x9;if (call TestTimer.isRunning() != TRUE)&#xd;&#xa;&#x9;{&#xd;&#xa;&#x9;&#x9;post incrementCounter();&#xd;&#xa;&#x9;&#x9;dbg(&quot;MVizC&quot;, &quot;TestTimer still running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;}&#xd;&#xa;&#x9;else&#xd;&#xa;&#x9;{&#xd;&#xa;&#x9;&#x9;dbg(&quot;MVizC&quot;, &quot;TestTimer stop running @ %s.\n&quot;, sim_time_string());&#xd;&#xa;&#x9;&#x9;}&#xd;&#xa;&#x9;&#x9;&#xd;&#xa;&#x9;" Name="incrementCounter()"/>
+                </has_module_implementation>
+            </containsModule>
+            <hasIncludeDecleration Name="MViz.h"/>
+        </hasComponent>
+        <hasComponent Name="Configuration Component">
+            <containsConfiguration Name="MVizAppC">
+                <has_configuration_signature Name="MVizAppC"/>
+                <has_configuration_implementation>
+                    <hasWiring Description="">
+                        <has_nesC_wiring_code Content="MVizC.Boot -> MainC"/>
+                        <has_nesC_wiring_code Content="MVizC.Timer -> TimerMilliC"/>
+                        <has_nesC_wiring_code Content="MVizC.Read -> Sensor"/>
+                        <has_nesC_wiring_code Content="MVizC.Leds -> LedsC"/>
+                        <has_nesC_wiring_code Content="MVizC.Random -> RandomC"/>
+                        <has_nesC_wiring_code Content="MVizC.TestTimer -> TestTimer"/>
+                        <has_nesC_wiring_code Content="MVizC.TestRadioControl -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="MVizC.RadioControl -> ActiveMessageC"/>
+                        <has_nesC_wiring_code Content="MVizC.SerialControl -> SerialActiveMessageC"/>
+                        <has_nesC_wiring_code Content="MVizC.RoutingControl -> Collector"/>
+                        <has_nesC_wiring_code Content="MVizC.Send -> CollectionSenderC"/>
+                        <has_nesC_wiring_code Content="MVizC.SerialSend -> SerialAMSenderC.AMSend"/>
+                        <has_nesC_wiring_code Content="MVizC.Snoop -> Collector.Snoop[AM_MVIZ_MSG]"/>
+                        <has_nesC_wiring_code Content="MVizC.Receive -> Collector.Receive[AM_MVIZ_MSG]"/>
+                        <has_nesC_wiring_code Content="MVizC.RootControl -> Collector"/>
+                        <has_nesC_wiring_code Content="MVizC.CtpInfo -> Ctp"/>
+                        <has_nesC_wiring_code Content="MVizC.LinkEstimator -> Ctp"/>
+                    </hasWiring>
+                    <definesComponents Name="MainC"/>
+                    <definesComponents Name="MVizC"/>
+                    <definesComponents Name="LedsC"/>
+                    <definesComponents Name="new TimerMilliC()"/>
+                    <definesComponents Name="new MVizSensorC() as Sensor"/>
+                    <definesComponents Name="RandomC"/>
+                    <definesComponents Name="CollectionC as Collector"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                    <definesComponents Name="new CollectionSenderC(AM_MVIZ_MSG)"/>
+                    <definesComponents Name="SerialActiveMessageC"/>
+                    <definesComponents Name="new SerialAMSenderC(AM_MVIZ_MSG)"/>
+                    <definesComponents Name="CtpP as Ctp"/>
+                    <definesComponents Name="new TimerMilliC() as TestTimer"/>
+                    <definesComponents Name="ActiveMessageC"/>
+                </has_configuration_implementation>
+            </containsConfiguration>
+            <hasIncludeDecleration Name="&lt;MViz.h>"/>
+        </hasComponent>
+    </hasApplication>
+</tinyos_metamodel:Mote>
