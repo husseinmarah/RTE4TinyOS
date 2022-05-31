@@ -14,7 +14,7 @@ Eclipse Luna Release (4.4.0) was used to develop the RE4TinyOS environment.
 
 Stpes to use the RE4TinyOS:
 1. You can run the `run.jar` directly and read TinyOS applications as an input, then get the parsed models for those applications.
-1. The folder `project.zip` contains the source code, and include the missing dependencies (Antlr4.7.2, Antlr4.4, xml-apis)
+1. The folder `project.zip` contains the source code, and includes the required dependencies (Antlr4.7.2, Antlr4.4, xml-apis)
 
 The **example** folder, contains all the artifacts and the original codes for the applications that were used to evaluate the approach.
 
