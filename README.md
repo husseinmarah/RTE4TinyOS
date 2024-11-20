@@ -18,6 +18,8 @@ Stpes to use the RE4TinyOS:
 
 The **example** folder contains all the artefacts and original codes for the applications used to evaluate the approach.
 
+[![DOI: 10.5281/zenodo.14191011](https://github.com/user-attachments/assets/e5fa27c2-2ce9-4b9b-bc0c-f86dc34ebf78)](https://doi.org/10.5281/zenodo.14191011)
+
 For citation and reading the research, it's possible to access the article from this link:
 https://www.sciencedirect.com/science/article/pii/S2590118421000307
 
