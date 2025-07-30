@@ -16,7 +16,7 @@ Stpes to use the RE4TinyOS:
 1. You can run the `run.jar` directly, read TinyOS applications as input, and then get the parsed models for those applications.
 1. The folder `project.zip` contains the source code and includes the required dependencies (Antlr4.7.2, Antlr4.4, xml-apis)
 
-The **example** folder contains all the artefacts and original codes for the applications used to evaluate the approach.
+The **examples** folder contains all the artefacts and original codes for the applications used to evaluate the approach.
 
 [![DOI: 10.5281/zenodo.14191011](https://github.com/user-attachments/assets/e5fa27c2-2ce9-4b9b-bc0c-f86dc34ebf78)](https://doi.org/10.5281/zenodo.14191011)
 
